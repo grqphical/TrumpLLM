@@ -1,5 +1,6 @@
 import pandas as pd
 from datasets import Dataset
+from peft import LoraConfig, get_peft_model
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer
 
 posts = pd.read_json("posts.json", lines=True)
@@ -51,6 +52,17 @@ training_args = TrainingArguments(
     fp16=True,
     report_to=[]
 )
+
+lora_config = LoraConfig(
+    r=8,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM"
+)
+
+model = get_peft_model(model, lora_config)
 
 trainer = Trainer(
     model=model,
