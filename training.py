@@ -1,6 +1,6 @@
 import pandas as pd
 from datasets import Dataset
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer
 
 posts = pd.read_json("posts.json", lines=True)
 posts = posts[["content"]]
@@ -33,3 +33,35 @@ def tokenize(batch):
     return tokens
 
 tokenized_dataset = dataset.map(tokenize, batched=True)
+
+# ==========Training==========
+model = AutoModelForCausalLM.from_pretrained("google/gemma-3-1b-it")
+model.config.use_cache = False  # Needed for training
+model.gradient_checkpointing_enable()
+
+training_args = TrainingArguments(
+    output_dir="./results",
+    per_device_train_batch_size=1,
+    per_device_eval_batch_size=1,
+    num_train_epochs=3,
+    logging_steps=10,
+    save_steps=500,
+    learning_rate=5e-5,
+    save_total_limit=2,
+    fp16=True,
+    report_to=[]
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_dataset["train"],
+    eval_dataset=tokenized_dataset["test"]
+)
+
+# Train
+trainer.train()
+
+# Save
+model.save_pretrained("./trumpLLM")
+tokenizer.save_pretrained("./trumpLLM")
