@@ -8,8 +8,9 @@ lora_model_path = "./trumpLLM"
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(base_model_name)
 
-# Load base model
+# Load base model and add LoRA adapters
 model = AutoModelForCausalLM.from_pretrained(base_model_name)
+model = PeftModel.from_pretrained(model, lora_model_path)
 
 chat = pipeline(
     "text-generation",
